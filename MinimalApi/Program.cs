@@ -9,25 +9,35 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var app = builder.Build();
 
 
+// 
+///<summary>
+/// Use the MapGroup API 
+/// Para Agrupa el Patch de todoItems y la URI final seria https://localhost:7209/{id}
+/// </summary>
+var todoItems = app.MapGroup("/todoitems");
 
-app.MapGet("/", () => "Hello World!");
+//app.MapGet("/", () => "Hello World!");
 
-app.MapGet("/todoitems", async (TodoDb db) => await db.Todos.ToListAsync());
 
-app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
+
+app.MapGet("/", async (TodoDb db) => await db.Todos.ToListAsync());
+
+app.MapGet("/complete", async (TodoDb db) => await db.Todos.Where( t=> t.IsComplete).ToListAsync());
+
+app.MapGet("/{id}", async (int id, TodoDb db) =>
     await db.Todos.FindAsync(id)
     is Todo todo
         ? Results.Ok(todo)
         : Results.NotFound());
 
-app.MapPost("/todoitems", async (Todo todo, TodoDb db) =>
+app.MapPost("/", async (Todo todo, TodoDb db) =>
 {
     db.Todos.Add(todo);
     await db.SaveChangesAsync();
     return Results.Created($"/todoitems/{todo.Id}", todo);
 });
 
-app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
+app.MapPut("/{id}", async (int id, Todo inputTodo, TodoDb db) =>
 {
 
     var todo = await db.Todos.FindAsync(id);
@@ -40,7 +50,7 @@ app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
     return Results.Ok(todo);
 });
 
-app.MapDelete("todolist/{id}", async (int id, TodoDb db) =>
+app.MapDelete("/{id}", async (int id, TodoDb db) =>
 {
     if (await db.Todos.FindAsync(id) is Todo todo)
     {
