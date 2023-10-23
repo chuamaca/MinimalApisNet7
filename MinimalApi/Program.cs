@@ -33,41 +33,84 @@ app.Run();
 
 static async Task<IResult> getAllTodos(TodoDb db)
 {
-    return TypedResults.Ok(await db.Todos.ToArrayAsync());
+
+    return TypedResults.Ok(await db.Todos.Select(x => new TodoItemDTO(x)).ToArrayAsync());
+
+    //return TypedResults.Ok(await db.Todos.ToArrayAsync());
+
 }
 
 static async Task<IResult> getCompleteTodos(TodoDb db)
 {
-    return TypedResults.Ok(await db.Todos.Where(t => t.IsComplete).ToListAsync());
+    return TypedResults.Ok(await db.Todos
+                        .Where(t => t.IsComplete)
+                        .Select(x => new TodoItemDTO(x))
+                        .ToArrayAsync()); 
+
+    //return TypedResults.Ok(await db.Todos.Where(t => t.IsComplete).ToListAsync());
 }
 
 static async Task<IResult> getTodo(int id, TodoDb db)
 {
     return await db.Todos.FindAsync(id)
             is Todo todo
-                ? Results.Ok(todo)
+                ? Results.Ok(new TodoItemDTO(todo))
                 : Results.NotFound();
+
+    //return await db.Todos.FindAsync(id)
+    //       is Todo todo
+    //           ? Results.Ok(todo)
+    //           : Results.NotFound();
 }
 
-static async Task<IResult> createTodo(Todo todo, TodoDb db)
+
+//static async Task<IResult> createTodo(Todo todo, TodoDb db)
+static async Task<IResult> createTodo(TodoItemDTO todoItemDTO, TodoDb db)
 {
 
-    db.Todos.Add(todo);
+    var todoItem = new Todo
+    {
+        IsComplete= todoItemDTO.IsComplete,
+        Name= todoItemDTO.Name
+    };
+
+    db.Todos.Add(todoItem);
     await db.SaveChangesAsync();
-    return Results.Created($"/todoitems/{todo.Id}", todo);
+
+    todoItemDTO = new TodoItemDTO(todoItem);
+
+    return Results.Created($"/todoitems/{todoItem.Id}", todoItemDTO);
+
+    //db.Todos.Add(todo);
+    //await db.SaveChangesAsync();
+    //return Results.Created($"/todoitems/{todo.Id}", todo);
 
 }
 
 
 
-static async Task<IResult> UpdateTodo(int id, Todo inputTodo, TodoDb db)
+//static async Task<IResult> UpdateTodo(int id, Todo inputTodo, TodoDb db)
+//{
+
+//    var todo = await db.Todos.FindAsync(id);
+//    if (todo is null) return Results.NotFound();
+
+//    todo.Name = inputTodo.Name;
+//    todo.IsComplete = inputTodo.IsComplete;
+
+//    await db.SaveChangesAsync();
+//    return Results.Ok(todo);
+
+//}
+static async Task<IResult> UpdateTodo(int id, TodoItemDTO todoItemDTO, TodoDb db)
 {
 
     var todo = await db.Todos.FindAsync(id);
+
     if (todo is null) return Results.NotFound();
 
-    todo.Name = inputTodo.Name;
-    todo.IsComplete = inputTodo.IsComplete;
+    todo.Name = todoItemDTO.Name;
+    todo.IsComplete = todoItemDTO.IsComplete;
 
     await db.SaveChangesAsync();
     return Results.Ok(todo);
